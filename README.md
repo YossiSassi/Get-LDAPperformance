@@ -14,3 +14,5 @@ NOTE: No Dependencies. No modules required. Requires Event Log Readers permissio
 Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\NTDS\Diagnostics -Name "15 Field Engineering" -Value 5
 
 NOTE: to stop logging these events in "Directory Services" Log, set the registry key value to 0
+
+![Sample results](Screenshot_Get-LDAPperformance.jpg)
