@@ -20,9 +20,16 @@ if ($NumOfDCs -lt 1)
     }
 
 $DCs | foreach {
-        Write-Host "Checking $_ ($i of $NumOfDCs Domain Controllers)..." -ForegroundColor Cyan;
+        Write-Host "Checking $_ ($i of $NumOfDCs Domain Controllers)..." -ForegroundColor Cyan -NoNewline;
         $i++;
-        $Events += Get-WinEvent -ComputerName $_ -FilterHashtable @{LogName="Directory Service"; id="1644" } -ErrorAction SilentlyContinue
+        $Events += Get-WinEvent -ComputerName $_ -FilterHashtable @{LogName="Directory Service"; id="1644" } -ErrorAction SilentlyContinue;
+	    if (!$?) {
+            Write-Host " An Error Occured. Check port connectivity." -ForegroundColor Yellow
+        }
+        else
+        {
+            Write-Host " Successful query." -ForegroundColor Green
+        }
     }
 
 If ($Events -ne $null) {
