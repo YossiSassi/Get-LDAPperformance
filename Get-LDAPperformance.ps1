@@ -1,7 +1,8 @@
-## Get-LDAPperformance - LDAP query performance events analysis
+## Get-LDAPperformance - LDAP query performance events analysis ##
 # Collects LDAP Query Performance Events and analyzes them to CSV & Grid. Helps in identifying large or unusual LDAP queries, either for Threat Hunting or IT optimization.
 # NOTE: No Dependencies. No modules required. Requires Event Log Readers permission or equivalent (privileged/access to DC 'directory Services' logs)
-## by 1nTh35h311 (comments to yossis@protonmail.com)
+# by 1nTh35h311 (comments to yossis@protonmail.com)
+## v1.1 ##
 
 # 1. First, you need to enable 'DS Access - Directory Services Access' in GPO for auditing
 # 2. If the following Reg Key does not exist locally on all Domain Controllers - please create it:
@@ -15,25 +16,25 @@ $Events = @();
 
 if ($NumOfDCs -lt 1)
     {
-        Write-Host "There was a problem while getting the Domain Controllers list.`nMake sure you are connected to a domain and try again." -ForegroundColor Yellow;
+        Write-Host "[!] There was a problem while getting the Domain Controllers list.`nMake sure you are connected to a domain and try again." -ForegroundColor Yellow;
 	break
     }
 
 $DCs | foreach {
-        Write-Host "Checking $_ ($i of $NumOfDCs Domain Controllers)..." -ForegroundColor Cyan -NoNewline;
+        Write-Host "[x] Checking $_ ($i of $NumOfDCs Domain Controllers)..." -ForegroundColor Cyan -NoNewline;
         $i++;
         $Events += Get-WinEvent -ComputerName $_ -FilterHashtable @{LogName="Directory Service"; id="1644" } -ErrorAction SilentlyContinue;
 	    if (!$?) {
-            Write-Host " An Error Occured. Check port connectivity." -ForegroundColor Yellow
+            Write-Host "[!] An Error Occured. Ensure port connectivity.`n$($error[0].Exception.Message)" -ForegroundColor Yellow
         }
         else
         {
-            Write-Host " Successful query." -ForegroundColor Green
+            Write-Host "[x] Successful query." -ForegroundColor Green
         }
     }
 
 If ($Events -ne $null) {
-	Write-Host "Found $(($Events |Measure-Object).count) LDAP event ID 1644 entries, generating report..." -ForegroundColor Green;
+	Write-Host "[x] Found $(($Events |Measure-Object).count) LDAP event ID 1644 entries, generating report..." -ForegroundColor Green;
 	
 	$Events | ForEach-Object { 
 		$_ | Add-Member -MemberType NoteProperty -Name DC -force -Value $_.MachineName
@@ -59,7 +60,7 @@ If ($Events -ne $null) {
 	}
 }
 else {
-	Write-Host "No relevant entries found (Event ID 1644).`nEnsure that 'Directory Service Access' is audited, and the proper Registry key is set on DCs." -ForegroundColor Yellow;
+	Write-Host "[!] No relevant entries found (Event ID 1644).`nEnsure that 'Directory Service Access' is audited, and the proper Registry key is set on DCs." -ForegroundColor Yellow;
     break
 }
 
@@ -70,7 +71,7 @@ $FileName = "$(Get-Location)\LDAPQueryPerformanceEventsAnalysis_$(Get-Date -Form
 $Events | select TimeGenerated,ClientIP,ClientPort,UserName,DC,StartingNode,Filter,SearchScope,AttributeSelection,VisitedEntries,ReturnedEntries,UsedIndexes,SearchTimeMS,PagesPreReadFromDisk,PagesReadFromDisk,PagesReferenced,CleanPagesModified,DirtyPagesModified,AttributesPreventingOptimization,ServerControls | 
     Export-Csv $FileName -NoTypeInformation;
 
-Write-Host "Entries saved to $FileName." -ForegroundColor Cyan;
+Write-Host "[x] Entries saved to $FileName." -ForegroundColor Cyan;
 
 # display entries in a grid
 $Events | select TimeGenerated,ClientIP,ClientPort,UserName,DC,StartingNode,Filter,SearchScope,AttributeSelection,VisitedEntries,ReturnedEntries,UsedIndexes,SearchTimeMS,PagesPreReadFromDisk,PagesReadFromDisk,PagesReferenced,CleanPagesModified,DirtyPagesModified,AttributesPreventingOptimization,ServerControls | 
